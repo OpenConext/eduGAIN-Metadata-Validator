@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
 import {SamlValidator} from './validator.js';
+
 // CSS removed: using plain HTML without styles for now
 
 function App() {
@@ -9,8 +10,8 @@ function App() {
 	const [isValidating, setIsValidating] = useState(false);
 	const [validator, setValidator] = useState(null);
 	const [isLoaded, setIsLoaded] = useState(false);
- // Config is static and loaded from ./config/checks.json; no GUI controls
- const [configJson, setConfigJson] = useState('[]');
+	// Config is static and loaded from ./config/checks.json; no GUI controls
+	const [configJson, setConfigJson] = useState('[]');
 
 	useEffect(() => {
 		const v = new SamlValidator();
@@ -37,7 +38,7 @@ function App() {
 				setConfigJson('[]');
 				setResults(prev => ([
 					...prev,
-					{ type: 'error', message: 'Could not load checks config (./config/checks.json): ' + e.message }
+					{type: 'error', message: 'Could not load checks config (./config/checks.json): ' + e.message}
 				]));
 			}
 		};
@@ -86,18 +87,18 @@ function App() {
 		const clone = template.content.cloneNode(true);
 		rootNode.appendChild(clone);
 
-  // Bind essential elements from the template (config GUI removed)
-  const xmlTextarea = rootNode.querySelector('#xml-input');
-  const fileInput = rootNode.querySelector('#file-upload');
-  const validateBtn = rootNode.querySelector('#validate-btn');
-  const resultsContainer = rootNode.querySelector('#results-container');
+		// Bind essential elements from the template (config GUI removed)
+		const xmlTextarea = rootNode.querySelector('#xml-input');
+		const fileInput = rootNode.querySelector('#file-upload');
+		const validateBtn = rootNode.querySelector('#validate-btn');
+		const resultsContainer = rootNode.querySelector('#results-container');
 
-  // Sync State to UI
-  if (xmlTextarea) xmlTextarea.value = xmlInput;
-  if (validateBtn) {
-      validateBtn.disabled = isValidating || !isLoaded;
-      validateBtn.textContent = isValidating ? 'Validating...' : 'Validate Now';
-  }
+		// Sync State to UI
+		if (xmlTextarea) xmlTextarea.value = xmlInput;
+		if (validateBtn) {
+			validateBtn.disabled = isValidating || !isLoaded;
+			validateBtn.textContent = isValidating ? 'Validating...' : 'Validate Now';
+		}
 
 		// Render Results
 		if (resultsContainer) {
@@ -119,22 +120,22 @@ function App() {
 			}
 		}
 
-        // UI to State (Event Listeners)
-        if (xmlTextarea) {
-            xmlTextarea.onchange = (e) => setXmlInput(e.target.value);
-            xmlTextarea.oninput = (e) => setXmlInput(e.target.value);
-        }
-        if (fileInput) fileInput.onchange = handleFileUpload;
-        if (validateBtn) validateBtn.onclick = validateXml;
-    };
+		// UI to State (Event Listeners)
+		if (xmlTextarea) {
+			xmlTextarea.onchange = (e) => setXmlInput(e.target.value);
+			xmlTextarea.oninput = (e) => setXmlInput(e.target.value);
+		}
+		if (fileInput) fileInput.onchange = handleFileUpload;
+		if (validateBtn) validateBtn.onclick = validateXml;
+	};
 
 	useEffect(() => {
 		syncUI();
 	});
 
- // We render nothing; the UI is managed by manipulating the existing
- // #validator-root element provided in index.html via syncUI().
- return null;
+	// We render nothing; the UI is managed by manipulating the existing
+	// #validator-root element provided in index.html via syncUI().
+	return null;
 }
 
 const rootContainer = document.getElementById('root');

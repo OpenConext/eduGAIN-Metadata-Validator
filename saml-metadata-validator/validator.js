@@ -1,57 +1,6 @@
 import {validateXML} from 'xmllint-wasm';
 
-/*
-
-const SAML_NAMESPACES = {
-	md: 'urn:oasis:names:tc:SAML:2.0:metadata',
-	ds: 'http://www.w3.org/2000/09/xmldsig#',
-	saml: 'urn:oasis:names:tc:SAML:2.0:assertion',
-	mdui: 'urn:oasis:names:tc:SAML:metadata:ui'
-};
-
-const SCHEMAS = {
-	'urn:oasis:names:tc:SAML:2.0:metadata': 'saml-schema-metadata-2.0.xsd',
-	'http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd': 'xmldsig-core-schema.xsd',
-	'urn:oasis:names:tc:SAML:metadata:ui': 'sstc-saml-metadata-ui-v1.0.xsd',
-	'http://www.w3.org/2001/04/xmlenc#': 'xenc-schema.xsd'
-}
-
-const SCHEMAS = {
-	"http://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd":  "xmldsig-core-schema.xsd",
-	"http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd": "xmldsig-core-schema.xsd",
-	"http://www.w3.org/TR/2002/REC-xmlenc-core-20021210/xenc-schema.xsd": "xenc-schema.xsd",
-	"http://www.w3.org/2001/xml.xsd": "xml.xsd",
-	"http://docs.oasis-open.org/security/saml/v2.0/saml-schema-metadata-2.0.xsd": "saml-schema-metadata-2.0.xsd",
-	"http://docs.oasis-open.org/security/saml/v2.0/saml-schema-assertion-2.0.xsd": "saml-schema-assertion-2.0.xsd",
-	"http://docs.oasis-open.org/security/saml/v2.0/saml-schema-protocol-2.0.xsd": "saml-schema-protocol-2.0.xsd",
-	"http://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-metadata-ui/v1.0/cs01/xsd/sstc-saml-metadata-ui-v1.0.xsd": "sstc-saml-metadata-ui-v1.0.xsd",
-};
-*/
-
-/*
-const SCHEMAS = {
-  // Absolute URLs used in imports
-  "http://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd":  "xmldsig-core-schema.xsd",
-  "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd": "xmldsig-core-schema.xsd",
-  "http://www.w3.org/TR/2002/REC-xmlenc-core-20021210/xenc-schema.xsd": "xenc-schema.xsd",
-  "http://www.w3.org/2001/xml.xsd": "xml.xsd",
-  "http://docs.oasis-open.org/security/saml/v2.0/saml-schema-metadata-2.0.xsd": "saml-schema-metadata-2.0.xsd",
-  "http://docs.oasis-open.org/security/saml/v2.0/saml-schema-assertion-2.0.xsd": "saml-schema-assertion-2.0.xsd",
-  "http://docs.oasis-open.org/security/saml/v2.0/saml-schema-protocol-2.0.xsd": "saml-schema-protocol-2.0.xsd",
-  "http://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-metadata-ui/v1.0/cs01/xsd/sstc-saml-metadata-ui-v1.0.xsd": "sstc-saml-metadata-ui-v1.0.xsd",
-
-  // Relative names used by OASIS XSDs between themselves
-  "saml-schema-metadata-2.0.xsd": "saml-schema-metadata-2.0.xsd",
-  "saml-schema-assertion-2.0.xsd": "saml-schema-assertion-2.0.xsd",
-  "saml-schema-protocol-2.0.xsd": "saml-schema-protocol-2.0.xsd",
-  "sstc-saml-metadata-ui-v1.0.xsd": "sstc-saml-metadata-ui-v1.0.xsd",
-  "xmldsig-core-schema.xsd": "xmldsig-core-schema.xsd",
-  "xenc-schema.xsd": "xenc-schema.xsd",
-  "xml.xsd": "xml.xsd",
-};
-*/
-
-const MAIN_SCHEMA = "saml+wsfed.xsd";
+const MAIN_SCHEMA = "saml.xsd";
 
 const SCHEMAS = {
 	"xmldsig-core-schema.xsd": "xmldsig-core-schema.xsd",
@@ -61,37 +10,7 @@ const SCHEMAS = {
 	"saml-schema-assertion-2.0.xsd": "saml-schema-assertion-2.0.xsd",
 	"saml-schema-protocol-2.0.xsd": "saml-schema-protocol-2.0.xsd",
 	"sstc-saml-metadata-ui-v1.0.xsd": "sstc-saml-metadata-ui-v1.0.xsd",
-	"ws-federation.xsd": "ws-federation.xsd",
-	"ws-authorization.xsd":"ws-authorization.xsd",
-	"oasis-200401-wss-wssecurity-secext-1.0.xsd": "oasis-200401-wss-wssecurity-secext-1.0.xsd",
-	"MetadataExchange.xsd": "MetadataExchange.xsd"
 };
-
-/*
-const SCHEMAS = {
-	'urn:oasis:names:tc:SAML:2.0:metadata': 'saml-schema-metadata-2.0.xsd',
-	'urn:oasis:names:tc:SAML:metadata:ui': 'sstc-saml-metadata-ui-v1.0.xsd',
-
-	// included by saml-schema-metadata-2.0.xsd
-	'http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd': 'xmldsig-core-schema.xsd',
-	'http://www.w3.org/TR/2002/REC-xmlenc-core-20021210/xenc-schema.xsd': 'xmldsig-core-schema.xsd',
-	'saml-schema-assertion-2.0.xsd': 'saml-schema-assertion-2.0.xsd',
-	'http://www.w3.org/2001/xml.xsd': 'xml.xsd',
-
-	// included by sstc-saml-metadata-ui-v1.0.xsd
-	'saml-schema-metadata-2.0.xsd': 'saml-schema-metadata-2.0.xsd',
-	//'http://www.w3.org/2001/xml.xsd': 'xml.xsd',
-
-	// included by xmldsig-core-schema.xsd
-
-	// included by xenc-schema.xsd
-	//'http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd': 'xmldsig-core-schema.xsd',
-
-	// included by saml-schema-assertion-2.0.xsd
-	//'http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd': 'xmldsig-core-schema.xsd',
-	//'http://www.w3.org/TR/2002/REC-xmlenc-core-20021210/xenc-schema.xsd': 'xmldsig-core-schema.xsd',
-};
-*/
 
 export class SamlValidator {
 	constructor(config = []) {
@@ -112,7 +31,6 @@ export class SamlValidator {
 		if (!xmlInput.trim()) return results;
 
 		try {
-			/*
 				// 1. Syntax Check (Browser DOMParser)
 				const parser = new window.DOMParser();
 				const xmlDoc = parser.parseFromString(xmlInput, "text/xml");
@@ -126,7 +44,7 @@ export class SamlValidator {
 					return results;
 				}
 				results.push({type: 'success', message: 'XML Syntax is valid.'});
-	*/
+
 			// 2. XSD Validation (via xmllint-wasm)
 			try {
 				// Quick capability check: xmllint-wasm relies on module Workers in the browser
@@ -213,23 +131,39 @@ export class SamlValidator {
 				results.push({type: 'error', message: 'XSD Validation initialization failed: ' + errMsg});
 			}
 
-			/*
-						// 3. Custom Tag Checks
-						const nsResolver = (prefix) => SAML_NAMESPACES[prefix] || null;
+			// 3. Custom Tag Checks
+			// Build namespace resolver from the document itself
+			const nsResolver = (prefix) => {
+				if (!prefix) return null;
 
-						this.config.forEach(check => {
-							const result = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.BOOLEAN_TYPE, null);
-							if (result.booleanValue) {
-								results.push({type: 'success', message: `Present: ${check.label}`});
-							} else {
-								results.push({
-									type: 'error',
-									message: `Missing: ${check.label}`,
-									help: check.help
-								});
-							}
-						});
-			*/
+				// First check the document element for xmlns attributes
+				const docElement = xmlDoc.documentElement;
+				if (!docElement) return null;
+
+				// Look for xmlns:prefix="uri" attribute
+				const nsAttr = docElement.getAttributeNode(`xmlns:${prefix}`);
+				if (nsAttr) return nsAttr.value;
+
+				// Check for default namespace if prefix is requested
+				const defaultNs = docElement.getAttributeNode('xmlns');
+				if (defaultNs && prefix === 'default') return defaultNs.value;
+
+				return null;
+			};
+
+			this.config.forEach(check => {
+				const result = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.BOOLEAN_TYPE, null);
+				if (result.booleanValue) {
+					results.push({type: 'success', message: `Present: ${check.label}`});
+				} else {
+					results.push({
+						type: 'error',
+						message: `Missing: ${check.label}`,
+						help: check.help
+					});
+				}
+			});
+
 		} catch (e) {
 			results.push({type: 'error', message: 'Unexpected Error: ' + e.message});
 		}

@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://example.com/notused">
 	<xs:import namespace="urn:oasis:names:tc:SAML:2.0:metadata" schemaLocation="saml-schema-metadata-2.0.xsd" />
-   <!--<xs:import namespace="http://docs.oasis-open.org/wsfed/federation/200706" schemaLocation="http://docs.oasis-open.org/wsfed/federation/v1.2/os/ws-federation.xsd" />-->
 </xs:schema>
