@@ -50,7 +50,8 @@ function App() {
 				]));
 			}
 		};
-		loadConfig();
+		// Explicitly discard the promise to satisfy IDE inspections
+		void loadConfig();
 	}, []);
 
 	const validateXml = useCallback(async () => {
@@ -84,121 +85,137 @@ function App() {
 		reader.readAsText(file);
 	}, []);
 
-	const syncUI = useCallback(async () => {
+	// --- UI Setup helpers
+	const initTemplate = useCallback(() => {
 		const rootNode = document.getElementById('validator-root');
-		if (!rootNode) return;
 		const template = document.getElementById('validator-template');
-		if (!template) return;
-
-		// Initialize UI once: only clone the template if the root is empty
+		if (!rootNode || !template) return;
 		if (!rootNode.hasChildNodes()) {
 			const clone = template.content.cloneNode(true);
 			rootNode.appendChild(clone);
 		}
-
-		// Bind essential elements from the template
-		const xmlEditorContainer = rootNode.querySelector('#xml-editor');
-		const editorError = rootNode.querySelector('#editor-error');
-		const fileInput = rootNode.querySelector('#file-upload');
-		const validateBtn = rootNode.querySelector('#validate-btn');
-		const resultsContainer = rootNode.querySelector('#results-container');
-
-		// Mark app as booted once we've initialized the template
 		if (typeof window !== 'undefined') {
 			window.__appBootOk = true;
 		}
+	}, []);
 
-		// Initialize CodeMirror editor once (preferred) and keep it in sync
-		// If CodeMirror cannot be loaded, show a simple error message
+	const initEditor = useCallback(() => {
+		const rootNode = document.getElementById('validator-root');
+		if (!rootNode) return;
+		const xmlEditorContainer = rootNode.querySelector('#xml-editor');
+		const editorError = rootNode.querySelector('#editor-error');
 		let editorView = rootNode.__xmlEditor || null;
-		if (!editorView && xmlEditorContainer) {
-			try {
-				// Stable extension set: XML language, basic visuals, history, and keymaps
-				const extensions = [
-					xml(),
-					lineNumbers(),
-					drawSelection(),
-					highlightActiveLine(),
-					history(),
-					keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
-					syntaxHighlighting(defaultHighlightStyle),
-					// Update listener to sync React state
-					EditorView.updateListener.of((update) => {
-						if (update.docChanged) {
-							const val = update.state.doc.toString();
-							setXmlInput(prev => (prev === val ? prev : val));
-						}
-					}),
-				];
-
-				const startState = EditorState.create({
-					doc: xmlInput,
-					extensions,
-				});
-				editorView = new EditorView({state: startState, parent: xmlEditorContainer});
-				rootNode.__xmlEditor = editorView;
-				if (editorError) editorError.style.display = 'none';
-			} catch (err) {
-				if (editorError) {
-					editorError.textContent = 'Could not load editor (init failed).';
-					editorError.style.display = 'block';
-				}
-				if (import.meta && import.meta.env && import.meta.env.DEV) throw err;
-				return;
-			}
-		}
-
-		if (editorView) {
-			// Keep editor content in sync with state (e.g., after file upload)
-			const current = editorView.state.doc.toString();
-			if (current !== xmlInput) {
-				const sel = editorView.state.selection; // preserve selection
-				editorView.dispatch({
-					changes: {from: 0, to: editorView.state.doc.length, insert: xmlInput},
-					selection: sel,
-				});
-			}
-		}
-
-		if (validateBtn) {
-			validateBtn.disabled = isValidating || !isLoaded;
-			validateBtn.textContent = isValidating ? 'Validating...' : 'Validate Now';
-		}
-
-		// Render Results (replace content but do not touch outer structure)
-		if (resultsContainer) {
-			// Always clear and re-render results only
-			resultsContainer.innerHTML = '';
-			if (results.length > 0) {
-				results.forEach(res => {
-					const resDiv = document.createElement('div');
-					const msgDiv = document.createElement('div');
-					msgDiv.textContent = `${res.type.toUpperCase()}: ${res.message}`;
-					resDiv.appendChild(msgDiv);
-
-					if (res.help) {
-						const helpDiv = document.createElement('div');
-						helpDiv.textContent = res.help;
-						resDiv.appendChild(helpDiv);
+		if (editorView || !xmlEditorContainer) return; // already initialized or missing container
+		try {
+			const extensions = [
+				xml(),
+				lineNumbers(),
+				drawSelection(),
+				highlightActiveLine(),
+				history(),
+				keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+				syntaxHighlighting(defaultHighlightStyle),
+				EditorView.updateListener.of((update) => {
+					if (update.docChanged) {
+						const val = update.state.doc.toString();
+						setXmlInput(prev => (prev === val ? prev : val));
 					}
-					resultsContainer.appendChild(resDiv);
-				});
-			} else {
-				const placeholder = document.createElement('div');
-				placeholder.textContent = 'Results will appear here...';
-				resultsContainer.appendChild(placeholder);
+				}),
+			];
+			const startState = EditorState.create({
+				doc: xmlInput,
+				extensions,
+			});
+			editorView = new EditorView({state: startState, parent: xmlEditorContainer});
+			rootNode.__xmlEditor = editorView;
+			if (editorError) editorError.style.display = 'none';
+		} catch (err) {
+			if (editorError) {
+				editorError.textContent = 'Could not load editor (init failed).';
+				editorError.style.display = 'block';
 			}
+			if (import.meta && import.meta.env && import.meta.env.DEV) throw err;
 		}
+	}, [xmlInput]);
 
-		// UI to State (Event Listeners) — assigning properties is idempotent
+	const syncEditorContent = useCallback(() => {
+		const rootNode = document.getElementById('validator-root');
+		if (!rootNode) return;
+		const editorView = rootNode.__xmlEditor;
+		if (!editorView) return;
+		const current = editorView.state.doc.toString();
+		if (current !== xmlInput) {
+			const sel = editorView.state.selection;
+			editorView.dispatch({
+				changes: {from: 0, to: editorView.state.doc.length, insert: xmlInput},
+				selection: sel,
+			});
+		}
+	}, [xmlInput]);
+
+	const updateValidateButton = useCallback(() => {
+		const rootNode = document.getElementById('validator-root');
+		if (!rootNode) return;
+		const validateBtn = rootNode.querySelector('#validate-btn');
+		if (!validateBtn) return;
+		validateBtn.disabled = isValidating || !isLoaded;
+		validateBtn.textContent = isValidating ? 'Validating...' : 'Validate Now';
+	}, [isValidating, isLoaded]);
+
+	const renderResults = useCallback(() => {
+		const rootNode = document.getElementById('validator-root');
+		if (!rootNode) return;
+		const resultsContainer = rootNode.querySelector('#results-container');
+		if (!resultsContainer) return;
+		resultsContainer.innerHTML = '';
+		if (results.length > 0) {
+			results.forEach(res => {
+				const resDiv = document.createElement('div');
+				const msgDiv = document.createElement('div');
+				msgDiv.textContent = `${res.type.toUpperCase()}: ${res.message}`;
+				resDiv.appendChild(msgDiv);
+				if (res.help) {
+					const helpDiv = document.createElement('div');
+					helpDiv.textContent = res.help;
+					resDiv.appendChild(helpDiv);
+				}
+				resultsContainer.appendChild(resDiv);
+			});
+		} else {
+			const placeholder = document.createElement('div');
+			placeholder.textContent = 'Results will appear here...';
+			resultsContainer.appendChild(placeholder);
+		}
+	}, [results]);
+
+	const bindEventHandlers = useCallback(() => {
+		const rootNode = document.getElementById('validator-root');
+		if (!rootNode) return;
+		const fileInput = rootNode.querySelector('#file-upload');
+		const validateBtn = rootNode.querySelector('#validate-btn');
 		if (fileInput) fileInput.onchange = handleFileUpload;
 		if (validateBtn) validateBtn.onclick = validateXml;
-	}, [xmlInput, results, isValidating, isLoaded, handleFileUpload, validateXml]);
+	}, [handleFileUpload, validateXml]);
 
+	// --- Effects wiring each responsibility with correct deps
 	useEffect(() => {
-		// Re-sync UI only when relevant state changes
-		syncUI();
-	}, [syncUI]);
+		initTemplate();
+	}, [initTemplate]);
+	useEffect(() => {
+		initEditor();
+	}, [initEditor]);
+	useEffect(() => {
+		syncEditorContent();
+	}, [syncEditorContent]);
+	useEffect(() => {
+		updateValidateButton();
+	}, [updateValidateButton]);
+	useEffect(() => {
+		renderResults();
+	}, [renderResults]);
+	useEffect(() => {
+		bindEventHandlers();
+	}, [bindEventHandlers]);
 
 	// We render nothing; the UI is managed by manipulating the existing
 	// #validator-root element provided in index.html via syncUI().
@@ -208,6 +225,7 @@ function App() {
 const rootContainer = document.getElementById('root');
 if (rootContainer) {
 	const root = createRoot(rootContainer);
+	/** @type {import('react').ReactNode} */
 	const appElement = React.createElement(App);
 	root.render(appElement);
 }
