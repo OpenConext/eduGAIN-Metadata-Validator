@@ -58,13 +58,6 @@
 				<div id="results-container">
 					<div>Results will appear here...</div>
 				</div>
-				<div>
-					<h3>Technical Note:</h3>
-					<p>
-						This app is now powered by <strong>yarn</strong> and bundled with <strong>Vite</strong>.
-						All libraries and SAML XSD schemas are included locally for offline capability.
-					</p>
-				</div>
 			</div>
 		</div>
 	</div>
@@ -88,14 +81,19 @@
 	}
 </script>
 <script>
-	// Fallback: if module fails to load or execute, show error after timeout
-	setTimeout(() => {
-		const root = document.getElementById('root');
-		if (root && !root.hasChildNodes()) {
-			const el = document.getElementById('app-load-error');
-			if (el) el.style.display = 'block';
-		}
-	}, 3000);
+    // Fallback: if module fails to load or execute, show error after timeout
+    setTimeout(() => {
+        const root = document.getElementById('root');
+        const validatorRoot = document.getElementById('validator-root');
+        const appInitialized = typeof window !== 'undefined' && window.__appBootOk === true;
+        // Only show the error if BOTH containers are empty and no app init flag is set
+        const rootEmpty = !root || !root.hasChildNodes();
+        const validatorEmpty = !validatorRoot || !validatorRoot.hasChildNodes();
+        if (!appInitialized && rootEmpty && validatorEmpty) {
+            const el = document.getElementById('app-load-error');
+            if (el) el.style.display = 'block';
+        }
+    }, 3000);
 </script>
 </body>
 </html>
