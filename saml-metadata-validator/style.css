@@ -1,0 +1,23 @@
+.error-line {
+	color: #e53e3e;
+}
+
+.success-line {
+	color: #38a169;
+}
+
+.warning-line {
+	color: #d69e2e;
+}
+
+#xml-input {
+	width: 90%;
+	height: 20em;
+	break-before: left;
+	break-after: left;
+}
+
+#results-container div {
+    white-space: pre;
+    font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}

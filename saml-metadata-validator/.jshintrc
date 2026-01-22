@@ -1,0 +1,14 @@
+{
+  "esversion": 8,
+  "browser": true,
+  "devel": true,
+  "undef": true,
+  "unused": true,
+  "globals": {
+    "React": false,
+    "ReactDOM": false,
+    "xmllint": false,
+    "ValidatorView": false,
+    "SamlValidator": false
+  }
+}

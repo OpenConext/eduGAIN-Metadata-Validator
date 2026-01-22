@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="index.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>SAML Metadata Validator</title>
+	<meta name="description"
+		  content="A client-side SAML Metadata validator using xmllint-wasm and React.
+		  Managed by yarn and bundled with Vite.">
+</head>
+<body>
+<div id="root"></div>
+<!-- Root container used by App.js to render the validator UI -->
+<div id="validator-root"></div>
+
+<div id="app-load-error" style="display:none;">
+    <h2>Application Failed to Load</h2>
+    <p>
+        Could not load the application bundle.
+        The application cannot start.
+    </p>
+    <details>
+        <summary>Possible causes</summary>
+        <ul>
+            <li>The entry module is missing or has been moved</li>
+            <li>There's a JavaScript syntax error in the module</li>
+            <li>A dependency failed to load</li>
+            <li>Check the browser console for more details</li>
+        </ul>
+    </details>
+</div>
+
+<template id="validator-template">
+    <div>
+        <header>
+            <div>
+                <h1>SAML Metadata Validator</h1>
+                <p>Pure client-side XML validation (Production Ready)</p>
+            </div>
+        </header>
+
+        <div>
+            <div>
+                <label for="xml-input">
+                    Paste SAML Metadata (XML)
+                </label>
+                <textarea id="xml-input" placeholder="<?xml version='1.0'?>..."></textarea>
+                <div>
+                    <label for="file-upload">Upload XML File</label>
+                    <input id="file-upload" type="file">
+                    <button id="validate-btn">Validate Now</button>
+                </div>
+            </div>
+
+            <div>
+                <h2>Validation Results</h2>
+                <div id="results-container">
+                    <div>Results will appear here...</div>
+                </div>
+                <div>
+                    <h3>Technical Note:</h3>
+                    <p>
+                        This app is now powered by <strong>yarn</strong> and bundled with <strong>Vite</strong>.
+                        All libraries and SAML XSD schemas are included locally for offline capability.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Vite dev server will handle module loading during development.
+     In production builds, the generated dist/index.html will include the hashed bundle automatically. -->
+<script type="module">
+	try {
+		// In development with Vite, import the source entry explicitly.
+		// In the production build (dist), this script block is ignored because dist/index.html
+		// already references the compiled asset (./assets/index-*.js).
+		if (import.meta && import.meta.env && import.meta.env.DEV) {
+			await import('./App.js');
+		}
+    } catch (e) {
+        const el = document.getElementById('app-load-error');
+        if (el) el.style.display = 'block';
+        // Also surface the error to console
+        console.error('Failed to load application entry:', e);
+    }
+</script>
+<script>
+    // Fallback: if module fails to load or execute, show error after timeout
+    setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root && !root.hasChildNodes()) {
+            const el = document.getElementById('app-load-error');
+            if (el) el.style.display = 'block';
+        }
+    }, 3000);
+</script>
+</body>
+</html>
