@@ -45,10 +45,15 @@
 				<label for="xml-input">
 					Paste SAML Metadata (XML)
 				</label>
-				<textarea id="xml-input" placeholder="<?xml version='1.0'?>..."></textarea>
+				<div id="xml-editor"></div>
+				<div id="editor-error" role="alert">
+					Could not load editor.
+				</div>
 				<div>
 					<label for="file-upload">Upload XML File</label>
 					<input id="file-upload" type="file">
+				</div>
+				<div>
 					<button id="validate-btn">Validate Now</button>
 				</div>
 			</div>
@@ -81,19 +86,19 @@
 	}
 </script>
 <script>
-    // Fallback: if module fails to load or execute, show error after timeout
-    setTimeout(() => {
-        const root = document.getElementById('root');
-        const validatorRoot = document.getElementById('validator-root');
-        const appInitialized = typeof window !== 'undefined' && window.__appBootOk === true;
-        // Only show the error if BOTH containers are empty and no app init flag is set
-        const rootEmpty = !root || !root.hasChildNodes();
-        const validatorEmpty = !validatorRoot || !validatorRoot.hasChildNodes();
-        if (!appInitialized && rootEmpty && validatorEmpty) {
-            const el = document.getElementById('app-load-error');
-            if (el) el.style.display = 'block';
-        }
-    }, 3000);
+	// Fallback: if module fails to load or execute, show error after timeout
+	setTimeout(() => {
+		const root = document.getElementById('root');
+		const validatorRoot = document.getElementById('validator-root');
+		const appInitialized = typeof window !== 'undefined' && window.__appBootOk === true;
+		// Only show the error if BOTH containers are empty and no app init flag is set
+		const rootEmpty = !root || !root.hasChildNodes();
+		const validatorEmpty = !validatorRoot || !validatorRoot.hasChildNodes();
+		if (!appInitialized && rootEmpty && validatorEmpty) {
+			const el = document.getElementById('app-load-error');
+			if (el) el.style.display = 'block';
+		}
+	}, 3000);
 </script>
 </body>
 </html>

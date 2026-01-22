@@ -10,14 +10,28 @@
 	color: #d69e2e;
 }
 
-#xml-input {
-	width: 90%;
-	height: 20em;
+#xml-editor {
+	width: 95%;
+	height: 40em;
+	border: 1px solid #ddd; border-radius: 8px;
 	break-before: left;
 	break-after: left;
+
+	.cm-editor {
+		width: 100%;
+		height: 100%;
+		minHeight: 220px;
+	}
 }
+
 
 #results-container div {
     white-space: pre;
     font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+#editor-error {
+	display:none;
+	color: #c00;
+	margin-top:8px;
 }

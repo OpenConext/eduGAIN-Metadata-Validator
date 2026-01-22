@@ -1,6 +1,12 @@
 import React, {useState, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
 import {SamlValidator} from './validator.js';
+// CodeMirror 6: use static ESM imports so Vite dedupes a single instance
+import { EditorView, lineNumbers, drawSelection, highlightActiveLine, keymap } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { xml } from '@codemirror/lang-xml';
+import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 
 // CSS removed: using plain HTML without styles for now
 
@@ -76,7 +82,7 @@ function App() {
 		reader.readAsText(file);
 	};
 
- const syncUI = () => {
+ const syncUI = async () => {
         const rootNode = document.getElementById('validator-root');
         if (!rootNode) return;
         const template = document.getElementById('validator-template');
@@ -88,34 +94,65 @@ function App() {
             rootNode.appendChild(clone);
         }
 
-        // Bind essential elements from the template (config GUI removed)
-        const xmlTextarea = rootNode.querySelector('#xml-input');
+        // Bind essential elements from the template
+        const xmlEditorContainer = rootNode.querySelector('#xml-editor');
+        const editorError = rootNode.querySelector('#editor-error');
         const fileInput = rootNode.querySelector('#file-upload');
         const validateBtn = rootNode.querySelector('#validate-btn');
         const resultsContainer = rootNode.querySelector('#results-container');
 
-        // Sync State to UI while preserving caret and scroll position
-        if (xmlTextarea) {
-            const shouldUpdate = xmlTextarea.value !== xmlInput;
-            if (shouldUpdate) {
-                const selStart = xmlTextarea.selectionStart;
-                const selEnd = xmlTextarea.selectionEnd;
-                const wasFocused = document.activeElement === xmlTextarea;
-                const prevScrollTop = xmlTextarea.scrollTop;
+        // Mark app as booted once we've initialized the template
+        try { window.__appBootOk = true; } catch (_) {}
 
-                xmlTextarea.value = xmlInput;
+        // Initialize CodeMirror editor once (preferred) and keep it in sync
+        // If CodeMirror cannot be loaded, show a simple error message
+        let editorView = rootNode.__xmlEditor || null;
+        if (!editorView && xmlEditorContainer) {
+            try {
+                // Stable extension set: XML language, basic visuals, history, and keymaps
+                const extensions = [
+                    xml(),
+                    lineNumbers(),
+                    drawSelection(),
+                    highlightActiveLine(),
+                    history(),
+                    keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+                    syntaxHighlighting(defaultHighlightStyle),
+                    // Update listener to sync React state
+                    EditorView.updateListener.of((update) => {
+                        if (update.docChanged) {
+                            const val = update.state.doc.toString();
+                            setXmlInput(prev => (prev === val ? prev : val));
+                        }
+                    }),
+                ];
 
-                // Restore selection, focus, and scroll
-                if (wasFocused) {
-                    try {
-                        xmlTextarea.focus();
-                        xmlTextarea.setSelectionRange(selStart, selEnd);
-                    } catch (_) {
-                        // noop: some browsers may throw if not focusable
-                    }
+                const startState = EditorState.create({
+                    doc: xmlInput,
+                    extensions,
+                });
+                editorView = new EditorView({ state: startState, parent: xmlEditorContainer });
+                rootNode.__xmlEditor = editorView;
+                if (editorError) editorError.style.display = 'none';
+            } catch (_) {
+                if (editorError) {
+                    editorError.textContent = 'Could not load editor (init failed).';
+                    editorError.style.display = 'block';
                 }
-                // Restore scroll position after value change resets it
-                xmlTextarea.scrollTop = prevScrollTop;
+                if (import.meta && import.meta.env && import.meta.env.DEV) throw _;
+                return;
+            }
+        }
+
+        if (editorView) {
+            // Keep editor content in sync with state (e.g., after file upload)
+            const current = editorView.state.doc.toString();
+            if (current !== xmlInput) {
+                const sel = editorView.state.selection; // preserve selection
+                editorView.dispatch({
+                    changes: { from: 0, to: editorView.state.doc.length, insert: xmlInput },
+                    selection: sel,
+                });
             }
         }
 
@@ -150,10 +187,6 @@ function App() {
         }
 
         // UI to State (Event Listeners) — assigning properties is idempotent
-        if (xmlTextarea) {
-            xmlTextarea.onchange = (e) => setXmlInput(e.target.value);
-            xmlTextarea.oninput = (e) => setXmlInput(e.target.value);
-        }
         if (fileInput) fileInput.onchange = handleFileUpload;
         if (validateBtn) validateBtn.onclick = validateXml;
     };

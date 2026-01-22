@@ -12,6 +12,13 @@ export default defineConfig({
     exclude: ['xmllint-wasm'],
   },
   resolve: {
+    dedupe: [
+      '@codemirror/state',
+      '@codemirror/view',
+      '@codemirror/language',
+      '@codemirror/commands',
+      '@codemirror/lang-xml',
+    ],
     alias: {
       'xmllint-wasm': 'xmllint-wasm/index-browser.mjs',
     },
