@@ -76,62 +76,92 @@ function App() {
 		reader.readAsText(file);
 	};
 
-	const syncUI = () => {
-		const rootNode = document.getElementById('validator-root');
-		if (!rootNode) return;
-		const template = document.getElementById('validator-template');
-		if (!template) return;
+ const syncUI = () => {
+        const rootNode = document.getElementById('validator-root');
+        if (!rootNode) return;
+        const template = document.getElementById('validator-template');
+        if (!template) return;
 
-		// Clear existing and clone template
-		rootNode.innerHTML = '';
-		const clone = template.content.cloneNode(true);
-		rootNode.appendChild(clone);
+        // Initialize UI once: only clone the template if the root is empty
+        if (!rootNode.hasChildNodes()) {
+            const clone = template.content.cloneNode(true);
+            rootNode.appendChild(clone);
+        }
 
-		// Bind essential elements from the template (config GUI removed)
-		const xmlTextarea = rootNode.querySelector('#xml-input');
-		const fileInput = rootNode.querySelector('#file-upload');
-		const validateBtn = rootNode.querySelector('#validate-btn');
-		const resultsContainer = rootNode.querySelector('#results-container');
+        // Bind essential elements from the template (config GUI removed)
+        const xmlTextarea = rootNode.querySelector('#xml-input');
+        const fileInput = rootNode.querySelector('#file-upload');
+        const validateBtn = rootNode.querySelector('#validate-btn');
+        const resultsContainer = rootNode.querySelector('#results-container');
 
-		// Sync State to UI
-		if (xmlTextarea) xmlTextarea.value = xmlInput;
-		if (validateBtn) {
-			validateBtn.disabled = isValidating || !isLoaded;
-			validateBtn.textContent = isValidating ? 'Validating...' : 'Validate Now';
-		}
+        // Sync State to UI while preserving caret and scroll position
+        if (xmlTextarea) {
+            const shouldUpdate = xmlTextarea.value !== xmlInput;
+            if (shouldUpdate) {
+                const selStart = xmlTextarea.selectionStart;
+                const selEnd = xmlTextarea.selectionEnd;
+                const wasFocused = document.activeElement === xmlTextarea;
+                const prevScrollTop = xmlTextarea.scrollTop;
 
-		// Render Results
-		if (resultsContainer) {
-			if (results.length > 0) {
-				resultsContainer.innerHTML = '';
-				results.forEach(res => {
-					const resDiv = document.createElement('div');
-					const msgDiv = document.createElement('div');
-					msgDiv.textContent = `${res.type.toUpperCase()}: ${res.message}`;
-					resDiv.appendChild(msgDiv);
+                xmlTextarea.value = xmlInput;
 
-					if (res.help) {
-						const helpDiv = document.createElement('div');
-						helpDiv.textContent = res.help;
-						resDiv.appendChild(helpDiv);
-					}
-					resultsContainer.appendChild(resDiv);
-				});
-			}
-		}
+                // Restore selection, focus, and scroll
+                if (wasFocused) {
+                    try {
+                        xmlTextarea.focus();
+                        xmlTextarea.setSelectionRange(selStart, selEnd);
+                    } catch (_) {
+                        // noop: some browsers may throw if not focusable
+                    }
+                }
+                // Restore scroll position after value change resets it
+                xmlTextarea.scrollTop = prevScrollTop;
+            }
+        }
 
-		// UI to State (Event Listeners)
-		if (xmlTextarea) {
-			xmlTextarea.onchange = (e) => setXmlInput(e.target.value);
-			xmlTextarea.oninput = (e) => setXmlInput(e.target.value);
-		}
-		if (fileInput) fileInput.onchange = handleFileUpload;
-		if (validateBtn) validateBtn.onclick = validateXml;
-	};
+        if (validateBtn) {
+            validateBtn.disabled = isValidating || !isLoaded;
+            validateBtn.textContent = isValidating ? 'Validating...' : 'Validate Now';
+        }
 
-	useEffect(() => {
-		syncUI();
-	});
+        // Render Results (replace content but do not touch outer structure)
+        if (resultsContainer) {
+            // Always clear and re-render results only
+            resultsContainer.innerHTML = '';
+            if (results.length > 0) {
+                results.forEach(res => {
+                    const resDiv = document.createElement('div');
+                    const msgDiv = document.createElement('div');
+                    msgDiv.textContent = `${res.type.toUpperCase()}: ${res.message}`;
+                    resDiv.appendChild(msgDiv);
+
+                    if (res.help) {
+                        const helpDiv = document.createElement('div');
+                        helpDiv.textContent = res.help;
+                        resDiv.appendChild(helpDiv);
+                    }
+                    resultsContainer.appendChild(resDiv);
+                });
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.textContent = 'Results will appear here...';
+                resultsContainer.appendChild(placeholder);
+            }
+        }
+
+        // UI to State (Event Listeners) — assigning properties is idempotent
+        if (xmlTextarea) {
+            xmlTextarea.onchange = (e) => setXmlInput(e.target.value);
+            xmlTextarea.oninput = (e) => setXmlInput(e.target.value);
+        }
+        if (fileInput) fileInput.onchange = handleFileUpload;
+        if (validateBtn) validateBtn.onclick = validateXml;
+    };
+
+ useEffect(() => {
+        // Re-sync UI only when relevant state changes
+        syncUI();
+    }, [xmlInput, results, isValidating, isLoaded]);
 
 	// We render nothing; the UI is managed by manipulating the existing
 	// #validator-root element provided in index.html via syncUI().
