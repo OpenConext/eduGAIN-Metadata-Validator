@@ -59,16 +59,16 @@ export class SamlValidator {
 
 	// 1) XML Syntax validation, produce xmlDoc for subsequent steps
 	validateSyntax(xmlInput) {
-		const out = { results: [], stop: false, xmlDoc: null };
+		const out = {results: [], stop: false, xmlDoc: null};
 		const parser = new window.DOMParser();
 		const xmlDoc = parser.parseFromString(xmlInput, 'text/xml');
 		const parseError = xmlDoc.getElementsByTagName('parsererror');
 		if (parseError.length > 0) {
-			out.results.push({ type: 'error', message: 'XML Syntax Error: ' + parseError[0].textContent });
+			out.results.push({type: 'error', message: 'XML Syntax Error: ' + parseError[0].textContent});
 			out.stop = true;
 			return out;
 		}
-		out.results.push({ type: 'success', message: 'XML Syntax is valid.' });
+		out.results.push({type: 'success', message: 'XML Syntax is valid.'});
 		out.xmlDoc = xmlDoc;
 		return out;
 	}
@@ -79,13 +79,13 @@ export class SamlValidator {
 		try {
 			const supportsModuleWorkers = () => {
 				try {
-					const blob = new Blob(['export default 42;'], { type: 'application/javascript' });
+					const blob = new Blob(['export default 42;'], {type: 'application/javascript'});
 					const url = URL.createObjectURL(blob);
-					const w = new Worker(url, { type: 'module' });
+					const w = new Worker(url, {type: 'module'});
 					w.terminate();
 					URL.revokeObjectURL(url);
 					return true;
-				} catch (e) {
+				} catch {
 					return false;
 				}
 			};
@@ -93,44 +93,43 @@ export class SamlValidator {
 			if (!supportsModuleWorkers()) {
 				results.push({
 					type: 'error',
-					message: 'XSD validation is not available: this browser/session does not support Module Workers required by xmllint-wasm. Try a Chromium-based browser or open the production build (dist/index.html).'
+					message: 'XSD validation is not available: this browser/session does not support Module Workers.' +
+						' Try a Chromium-based browser or open the production build (dist/index.html).'
 				});
 				return results;
 			}
 
-			const res = await fetch(`schemas/${MAIN_SCHEMA}`);
-			if (!res.ok) throw new Error(`Failed to load catalog: schemas/${MAIN_SCHEMA} (HTTP ${res.status})`);
-			const contentType = res.headers.get('content-type');
-			if (!contentType || !contentType.includes('xml')) {
-				throw new Error(`Invalid content-type for schema: schemas/${MAIN_SCHEMA} (expected xsd, got ${contentType})`);
-			}
-			const mainSchemaObject = await res.text();
+			// Helper function to fetch and validate schema files (expression form for JSHint compliance)
+			const fetchSchemaFile = async (schemaPath) => {
+				const res = await fetch(`schemas/${schemaPath}`);
+				if (!res.ok) {
+					throw new Error(`Failed to load schema: schemas/${schemaPath} (HTTP ${res.status})`);
+				}
+				const contentType = res.headers.get('content-type');
+				if (!contentType || !contentType.includes('xml')) {
+					throw new Error(`Invalid content-type for schema: schemas/${schemaPath}
+					(expected xsd, got ${contentType})`);
+				}
+				return await res.text();
+			};
 
-			const schemaObjects = await Promise.all(
-				Object.entries(SCHEMAS).map(async ([namespace, file]) => {
-					const res = await fetch(`schemas/${file}`);
-					if (!res.ok) throw new Error(`Failed to load schema: schemas/${file} (HTTP ${res.status})`);
-					const contentType = res.headers.get('content-type');
-					if (!contentType || !contentType.includes('xml')) {
-						throw new Error(`Invalid content-type for schema: schemas/${file} (expected xsd, got ${contentType})`);
-					}
-					const contents = await res.text();
-					return { fileName: namespace, contents };
-				})
-			);
+			// Then use it in the code block:
+			const mainSchemaObject = await fetchSchemaFile(MAIN_SCHEMA);
 
+			const schemaObjects = await Promise.all(Object.entries(SCHEMAS).map(async ([namespace, file]) => {
+				const contents = await fetchSchemaFile(file);
+				return {fileName: namespace, contents};
+			}));
 			const validation = await validateXML({
-				xml: [{ fileName: 'metadata.xml', contents: xmlInput }],
-				schema: mainSchemaObject,
-				preload: schemaObjects,
+				xml: [{fileName: 'metadata.xml', contents: xmlInput}], schema: mainSchemaObject, preload: schemaObjects,
 			});
 			if (validation.errors && validation.errors.length > 0) {
 				validation.errors.forEach(err => {
 					const loc = err.loc ? err.loc.lineNumber : 'unknown';
-					results.push({ type: 'error', message: `XSD Error: ${err.message} (Line ${loc})` });
+					results.push({type: 'error', message: `XSD Error: ${err.message} (Line ${loc})`});
 				});
 			} else {
-				results.push({ type: 'success', message: 'XML passes SAML 2.0 Metadata XSD validation.' });
+				results.push({type: 'success', message: 'XML passes SAML 2.0 Metadata XSD validation.'});
 			}
 		} catch (xsdError) {
 			let errMsg = '';
@@ -139,12 +138,16 @@ export class SamlValidator {
 			} else if (xsdError && xsdError.type) {
 				errMsg = `${xsdError.type}`;
 			} else {
-				try { errMsg = JSON.stringify(xsdError); } catch (_) { errMsg = String(xsdError); }
+				try {
+					errMsg = JSON.stringify(xsdError);
+				} catch {
+					errMsg = String(xsdError);
+				}
 			}
 			if (xsdError && xsdError.stack) {
 				errMsg += `\n${xsdError.stack}`;
 			}
-			results.push({ type: 'error', message: 'XSD Validation initialization failed: ' + errMsg });
+			results.push({type: 'error', message: 'XSD Validation initialization failed: ' + errMsg});
 		}
 		return results;
 	}
@@ -156,17 +159,18 @@ export class SamlValidator {
 			const dsNs = 'http://www.w3.org/2000/09/xmldsig#';
 			const signatureEl = xmlDoc.getElementsByTagNameNS(dsNs, 'Signature')[0];
 			if (!signatureEl) {
-				results.push({ type: 'info', message: 'XML Signature: No ds:Signature element found.' });
+				results.push({type: 'info', message: 'XML Signature: No ds:Signature element found.'});
 				return results;
 			}
 
 			let xmldsig;
 			try {
 				xmldsig = await import('xmldsigjs');
-			} catch (e) {
+			} catch {
 				results.push({
 					type: 'error',
-					message: 'XML Signature verification library not available. Please install dependency: npm install xmldsigjs',
+					message: 'XML Signature verification library not available. ' +
+						'Please install dependency: npm install xmldsigjs',
 					help: 'Install xmldsigjs and rebuild to enable cryptographic signature verification.'
 				});
 				return results; // cannot proceed further
@@ -174,20 +178,21 @@ export class SamlValidator {
 
 			try {
 				if (xmldsig.Application && xmldsig.CryptoEngine && xmldsig.Crypto) {
-					xmldsig.Application.setEngine(
-						'WebCrypto',
-						new xmldsig.CryptoEngine({
-							name: 'WebCrypto',
-							crypto: window.crypto,
-							subtle: window.crypto && window.crypto.subtle
-						}, new xmldsig.Crypto())
-					);
+					xmldsig.Application.setEngine('WebCrypto', new xmldsig.CryptoEngine({
+						name: 'WebCrypto', crypto: window.crypto, subtle: window.crypto && window.crypto.subtle
+					}, new xmldsig.Crypto()));
 				}
-			} catch (_) { /* best-effort */ }
+			} catch { /* best-effort */
+				void 0;
+			}
 
-			const SignedXml = xmldsig.SignedXml || xmldsig.SignedXmlDocument || (xmldsig.default && xmldsig.default.SignedXml);
+			const SignedXml = (xmldsig.SignedXml || xmldsig.SignedXmlDocument ||
+				(xmldsig.default && xmldsig.default.SignedXml));
 			if (!SignedXml) {
-				results.push({ type: 'error', message: 'XML Signature: xmldsigjs SignedXml class not found (version mismatch).' });
+				results.push({
+					type: 'error',
+					message: 'XML Signature: xmldsigjs SignedXml class not found (version mismatch).'
+				});
 				return results;
 			}
 
@@ -208,21 +213,36 @@ export class SamlValidator {
 				if (sigMethodEl) sigMethod = sigMethodEl.getAttribute('Algorithm');
 
 				if (verified) {
-					results.push({ type: 'success', message: `XML Signature verified successfully${sigMethod ? ` (${sigMethod})` : ''}.` });
+					results.push({
+						type: 'success',
+						message: `XML Signature verified successfully${sigMethod ? ` (${sigMethod})` : ''}.`
+					});
 				} else {
 					let details = '';
 					if (signedXml.validationResult) {
-						try { details = JSON.stringify(signedXml.validationResult); } catch (_e) {}
+						try {
+							details = JSON.stringify(signedXml.validationResult);
+						} catch {
+							void 0;
+						}
 					}
-					results.push({ type: 'error', message: `XML Signature verification failed${sigMethod ? ` (${sigMethod})` : ''}. ${details}` });
+					results.push({
+						type: 'error',
+						message: `XML Signature verification failed${sigMethod ? ` (${sigMethod})` : ''}. ${details}`
+					});
 				}
 			} catch (sigErr) {
 				let err = '';
-				try { err = sigErr?.message || JSON.stringify(sigErr); } catch (_) { err = String(sigErr); }
-				results.push({ type: 'error', message: 'XML Signature verification error: ' + err });
+				try {
+					err = sigErr?.message || JSON.stringify(sigErr);
+				} catch {
+					err = String(sigErr);
+				}
+				results.push({type: 'error', message: 'XML Signature verification error: ' + err});
 			}
-		} catch (_) {
+		} catch {
 			// ignore, results already collected as much as possible
+			void 0;
 		}
 		return results;
 	}
@@ -244,9 +264,9 @@ export class SamlValidator {
 		this.config.forEach(check => {
 			const result = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.BOOLEAN_TYPE, null);
 			if (result.booleanValue) {
-				results.push({ type: 'success', message: `Present: ${check.label}` });
+				results.push({type: 'success', message: `Present: ${check.label}`});
 			} else {
-				results.push({ type: 'error', message: `Missing: ${check.label}`, help: check.help });
+				results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
 			}
 		});
 		return results;

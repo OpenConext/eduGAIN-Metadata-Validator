@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint App.js validator.js"
+    "lint": "eslint App.js validator.js",
+    "jshint": "jshint App.js validator.js"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +37,7 @@
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "jshint": "^2.13.6"
   }
 }
