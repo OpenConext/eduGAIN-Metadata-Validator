@@ -131,7 +131,101 @@ export class SamlValidator {
 				results.push({type: 'error', message: 'XSD Validation initialization failed: ' + errMsg});
 			}
 
-			// 3. Custom Tag Checks
+			// 3. XML Signature Verification (via xmldsigjs + WebCrypto)
+			try {
+				// Locate ds:Signature
+				const dsNs = 'http://www.w3.org/2000/09/xmldsig#';
+				const signatureEl = xmlDoc.getElementsByTagNameNS(dsNs, 'Signature')[0];
+				if (!signatureEl) {
+					results.push({
+						type: 'info',
+						message: 'XML Signature: No ds:Signature element found.'
+					});
+				} else {
+					let xmldsig;
+					try {
+						// dynamic import to avoid bundling issues if not needed
+						xmldsig = await import('xmldsigjs');
+					} catch (e) {
+						results.push({
+							type: 'error',
+							message: 'XML Signature verification library not available. Please install dependency: npm install xmldsigjs',
+							help: 'Install xmldsigjs and rebuild to enable cryptographic signature verification.'
+						});
+						throw e; // skip further signature processing
+					}
+
+					// Configure WebCrypto engine when applicable (older xmldsigjs API)
+					try {
+						if (xmldsig.Application && xmldsig.CryptoEngine && xmldsig.Crypto) {
+							xmldsig.Application.setEngine(
+								'WebCrypto',
+								new xmldsig.CryptoEngine({
+									name: 'WebCrypto',
+									crypto: window.crypto,
+									subtle: window.crypto && window.crypto.subtle
+								}, new xmldsig.Crypto())
+							);
+						}
+					} catch (_) {
+						// best-effort; newer versions auto-detect WebCrypto
+					}
+
+					// Perform verification using embedded KeyInfo/X509 cert (no trust anchoring)
+					const SignedXml = xmldsig.SignedXml || xmldsig.SignedXmlDocument || (xmldsig.default && xmldsig.default.SignedXml);
+					if (!SignedXml) {
+						results.push({
+							type: 'error',
+							message: 'XML Signature: xmldsigjs SignedXml class not found (version mismatch).'
+						});
+					} else {
+						try {
+							const signedXml = new SignedXml(xmlDoc);
+							if (typeof signedXml.LoadXml === 'function') {
+								signedXml.LoadXml(signatureEl);
+							}
+							let verified = false;
+							if (typeof signedXml.Verify === 'function') {
+								verified = await signedXml.Verify();
+							} else if (typeof signedXml.verify === 'function') {
+								verified = await signedXml.verify();
+							}
+
+							// Extract algorithm details for reporting
+							let sigMethod = null;
+							const sigMethodEl = signatureEl.getElementsByTagNameNS(dsNs, 'SignatureMethod')[0];
+							if (sigMethodEl) sigMethod = sigMethodEl.getAttribute('Algorithm');
+
+							if (verified) {
+								results.push({
+									type: 'success',
+									message: `XML Signature verified successfully${sigMethod ? ` (${sigMethod})` : ''}.`
+								});
+							} else {
+								let details = '';
+								if (signedXml.validationResult) {
+									try { details = JSON.stringify(signedXml.validationResult); } catch (_e) {}
+								}
+								results.push({
+									type: 'error',
+									message: `XML Signature verification failed${sigMethod ? ` (${sigMethod})` : ''}. ${details}`
+								});
+							}
+						} catch (sigErr) {
+							let err = '';
+							try { err = sigErr?.message || JSON.stringify(sigErr); } catch (_) { err = String(sigErr); }
+							results.push({
+								type: 'error',
+								message: 'XML Signature verification error: ' + err
+							});
+						}
+					}
+				}
+			} catch (_) {
+				// signature step already reported detailed errors; continue with other checks
+			}
+
+			// 4. Custom Tag Checks
 			// Build namespace resolver from the document itself
 			const nsResolver = (prefix) => {
 				if (!prefix) return null;

@@ -16,6 +16,7 @@
   "dependencies": {
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "xmldsigjs": "^2.8.5",
     "xmllint-wasm": "^5.1.0"
   },
   "devDependencies": {
