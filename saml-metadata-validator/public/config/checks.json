@@ -1,22 +1,22 @@
 [
-  {
-    "xpath": "//md:EntityDescriptor",
-    "label": "EntityDescriptor (Root element)",
-    "help": "The root element of a SAML metadata document must be EntityDescriptor."
-  },
-  {
-    "xpath": "//md:SPSSODescriptor",
-    "label": "SPSSODescriptor",
-    "help": "SPSSODescriptor is required for Service Provider metadata."
-  },
-  {
-    "xpath": "//md:AssertionConsumerService",
-    "label": "AssertionConsumerService",
-    "help": "AssertionConsumerService is where the IdP sends the SAML Response."
-  },
-  {
-    "xpath": "//mdui:UIInfo",
-    "label": "UIInfo (Discovery metadata)",
-    "help": "UIInfo contains information for display in discovery services (e.g., Logo, DisplayName)."
-  }
+    {
+        "xpath": "//md:EntityDescriptor",
+        "label": "EntityDescriptor (Root element)",
+        "help": "The root element of a SAML metadata document must be EntityDescriptor."
+    },
+    {
+        "xpath": "//md:SPSSODescriptor",
+        "label": "SPSSODescriptor",
+        "help": "SPSSODescriptor is required for Service Provider metadata."
+    },
+    {
+        "xpath": "//md:AssertionConsumerService",
+        "label": "AssertionConsumerService",
+        "help": "AssertionConsumerService is where the IdP sends the SAML Response."
+    },
+    {
+        "xpath": "//mdui:UIInfo",
+        "label": "UIInfo (Discovery metadata)",
+        "help": "UIInfo contains information for display in discovery services (e.g., Logo, DisplayName)."
+    }
 ]
