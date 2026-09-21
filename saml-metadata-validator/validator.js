@@ -99,16 +99,17 @@ class SamlValidator {
 			const attr = docElement.getAttributeNode(`xmlns:${prefix}`);
 			if (!attr) {
 				results.push({
-					type: 'error',
-					message: `Missing required namespace: xmlns:${prefix}="${expectedUri}"`});
+					type: 'error', message: `Missing required namespace: xmlns:${prefix}="${expectedUri}"`
+				});
 			} else if (attr.value !== expectedUri) {
 				results.push({
 					type: 'error',
-					message: `Incorrect namespace URI for xmlns:${prefix}: expected "${expectedUri}", got "${attr.value}"`});
+					message: `Incorrect namespace URI for xmlns:${prefix}: expected "${expectedUri}", got "${attr.value}"`
+				});
 			} else {
 				results.push({
-					type: 'success',
-					message: `Namespace defined: xmlns:${prefix}="${expectedUri}"`});
+					type: 'success', message: `Namespace defined: xmlns:${prefix}="${expectedUri}"`
+				});
 			}
 		}
 		return results;
@@ -152,8 +153,7 @@ class SamlValidator {
 			if (!supportsModuleWorkers()) {
 				results.push({
 					type: 'error',
-					message: 'XSD validation is not available: this browser/session does not support Module Workers.' +
-						' Try a Chromium-based browser or open the production build (dist/index.html).'
+					message: 'XSD validation is not available: this browser/session does not support Module Workers.' + ' Try a Chromium-based browser or open the production build (dist/index.html).'
 				});
 				return results;
 			}
@@ -228,8 +228,7 @@ class SamlValidator {
 			} catch {
 				results.push({
 					type: 'error',
-					message: 'XML Signature verification library not available. ' +
-						'Please install dependency: npm install xmldsigjs',
+					message: 'XML Signature verification library not available. ' + 'Please install dependency: npm install xmldsigjs',
 					help: 'Install xmldsigjs and rebuild to enable cryptographic signature verification.'
 				});
 				return results; // cannot proceed further
@@ -245,12 +244,10 @@ class SamlValidator {
 				void 0;
 			}
 
-			const SignedXml = (xmldsig.SignedXml || xmldsig.SignedXmlDocument ||
-				(xmldsig.default && xmldsig.default.SignedXml));
+			const SignedXml = (xmldsig.SignedXml || xmldsig.SignedXmlDocument || (xmldsig.default && xmldsig.default.SignedXml));
 			if (!SignedXml) {
 				results.push({
-					type: 'error',
-					message: 'XML Signature: xmldsigjs SignedXml class not found (version mismatch).'
+					type: 'error', message: 'XML Signature: xmldsigjs SignedXml class not found (version mismatch).'
 				});
 				return results;
 			}
@@ -344,9 +341,15 @@ class SamlValidator {
 							}
 							const found = nsUri ? node.getElementsByTagNameNS(nsUri, localName) : node.getElementsByTagName(localName);
 							if (found.length === 0) {
-								results.push({type: 'error', message: `Missing child: ${childSpec} for ${check.label}`, help: check.help});
+								results.push({
+									type: 'error',
+									message: `Missing child: ${childSpec} for ${check.label}`,
+									help: check.help
+								});
 							} else {
-								results.push({type: 'success', message: `Present child: ${childSpec} for ${check.label}`});
+								results.push({
+									type: 'success', message: `Present child: ${childSpec} for ${check.label}`
+								});
 							}
 						}
 					}
@@ -374,7 +377,11 @@ class SamlValidator {
 				if (count === 0) {
 					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
 				} else if (count > maxOccurrences) {
-					results.push({type: 'error', message: `Too many: ${check.label} (found ${count}, maximum allowed ${maxOccurrences})`, help: check.help});
+					results.push({
+						type: 'error',
+						message: `Too many: ${check.label} (found ${count}, maximum allowed ${maxOccurrences})`,
+						help: check.help
+					});
 				} else {
 					results.push({type: 'success', message: `Present: ${check.label}`});
 				}
