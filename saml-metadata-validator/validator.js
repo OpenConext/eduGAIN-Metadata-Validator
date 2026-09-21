@@ -2,6 +2,10 @@ import {validateXML} from 'xmllint-wasm';
 
 const MAIN_SCHEMA = "saml.xsd";
 
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 const SCHEMAS = {
 	"xmldsig-core-schema.xsd": "xmldsig-core-schema.xsd",
 	"xenc-schema.xsd": "xenc-schema.xsd",
@@ -39,7 +43,7 @@ class SamlValidator {
 			const xmlDoc = syntax.xmlDoc;
 
 			// 2. Namespace validation
-			const nsResults = this.validateNamespaces(xmlDoc);
+			const nsResults = this.validateNamespaces(xmlDoc, xmlInput);
 			results.push(...nsResults);
 
 			// Ensure required namespaces are present for remainder of tests (e.g. XPath evaluation)
@@ -54,7 +58,7 @@ class SamlValidator {
 			results.push(...sigResults);
 
 			// 5. Custom checks
-			const customResults = this.runCustomChecks(xmlDoc);
+			const customResults = this.runCustomChecks(xmlDoc, xmlInput);
 			results.push(...customResults);
 
 		} catch (e) {
@@ -81,7 +85,7 @@ class SamlValidator {
 	}
 
 	// 2) Namespace validation
-	validateNamespaces(xmlDoc) {
+	validateNamespaces(xmlDoc, xmlInput) {
 		const results = [];
 		const requiredNamespaces = {
 			'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
@@ -97,18 +101,25 @@ class SamlValidator {
 
 		for (const [prefix, expectedUri] of Object.entries(requiredNamespaces)) {
 			const attr = docElement.getAttributeNode(`xmlns:${prefix}`);
+			const currentLine = this.findLineNumber(xmlInput, docElement, 0);
+
 			if (!attr) {
 				results.push({
-					type: 'error', message: `Missing required namespace: xmlns:${prefix}="${expectedUri}"`
+					type: 'error',
+					message: `Missing required namespace: xmlns:${prefix}="${expectedUri}"`,
+					line: currentLine
 				});
 			} else if (attr.value !== expectedUri) {
 				results.push({
 					type: 'error',
-					message: `Incorrect namespace URI for xmlns:${prefix}: expected "${expectedUri}", got "${attr.value}"`
+					message: `Incorrect namespace URI for xmlns:${prefix}: expected "${expectedUri}", got "${attr.value}"`,
+					line: currentLine
 				});
 			} else {
 				results.push({
-					type: 'success', message: `Namespace defined: xmlns:${prefix}="${expectedUri}"`
+					type: 'success',
+					message: `Namespace defined: xmlns:${prefix}="${expectedUri}"`,
+					line: currentLine
 				});
 			}
 		}
@@ -120,7 +131,8 @@ class SamlValidator {
 			'xml': 'http://www.w3.org/XML/1998/namespace',
 			'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
 			'mdui': 'urn:oasis:names:tc:SAML:metadata:ui',
-			'ds': 'http://www.w3.org/2000/09/xmldsig#'
+			'ds': 'http://www.w3.org/2000/09/xmldsig#',
+			'mdrpi': 'urn:oasis:names:tc:SAML:metadata:rpi'
 		};
 		const docElement = xmlDoc.documentElement;
 		if (!docElement) return;
@@ -184,11 +196,11 @@ class SamlValidator {
 			});
 			if (validation.errors && validation.errors.length > 0) {
 				validation.errors.forEach(err => {
-					const loc = err.loc ? err.loc.lineNumber : 'unknown';
-					results.push({type: 'error', message: `XSD Error: ${err.message} (Line ${loc})`});
+					const loc = err.loc && err.loc.lineNumber ? Number(err.loc.lineNumber) : 1;
+					results.push({type: 'error', message: `XSD Error: ${err.message}`, line: loc});
 				});
 			} else {
-				results.push({type: 'success', message: 'XML passes SAML 2.0 Metadata XSD validation.'});
+				results.push({type: 'success', message: 'XML passes SAML 2.0 Metadata XSD validation.', line: 1});
 			}
 		} catch (xsdError) {
 			let errMsg = '';
@@ -303,8 +315,52 @@ class SamlValidator {
 		return results;
 	}
 
+	findLineNumber(xmlInput, node, occurrenceIndex = 0) {
+		if (!xmlInput || !node) return 1;
+		const tagName = node.tagName || node.nodeName;
+		if (!tagName || tagName.startsWith('#')) return 1;
+
+		const tagRegex = new RegExp(`<(\\w+:)?${escapeRegExp(tagName)}(\\s|>|$)`, 'g');
+
+		const attrChecks = [];
+		if (node.attributes) {
+			for (let i = 0; i < node.attributes.length; i++) {
+				const attr = node.attributes[i];
+				if (attr.name && attr.value && !attr.name.startsWith('xmlns')) {
+					attrChecks.push(`${attr.name}="${attr.value}"`);
+					attrChecks.push(`${attr.name}='${attr.value}'`);
+				}
+			}
+		}
+
+		let match;
+		let foundCount = 0;
+		while ((match = tagRegex.exec(xmlInput)) !== null) {
+			const matchIdx = match.index;
+			const slice = xmlInput.substring(matchIdx, matchIdx + 200);
+			if (attrChecks.length === 0 || attrChecks.some(a => slice.includes(a))) {
+				if (foundCount === occurrenceIndex) {
+					return xmlInput.substring(0, matchIdx).split(/\r?\n/).length;
+				}
+				foundCount++;
+			}
+		}
+
+		tagRegex.lastIndex = 0;
+		foundCount = 0;
+		while ((match = tagRegex.exec(xmlInput)) !== null) {
+			const matchIdx = match.index;
+			if (foundCount === occurrenceIndex) {
+				return xmlInput.substring(0, matchIdx).split(/\r?\n/).length;
+			}
+			foundCount++;
+		}
+
+		return 1;
+	}
+
 	// 4) Custom XPath-based checks defined via config
-	runCustomChecks(xmlDoc) {
+	runCustomChecks(xmlDoc, xmlInput = '') {
 		const results = [];
 		const nsResolver = (prefix) => {
 			if (!prefix) return null;
@@ -326,10 +382,11 @@ class SamlValidator {
 				const snapshot = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 				const count = snapshot.snapshotLength;
 				if (count === 0) {
-					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
+					results.push({type: 'error', message: `Missing: ${check.label}`, line: 1, help: check.help});
 				} else {
 					for (let i = 0; i < count; i++) {
 						const node = snapshot.snapshotItem(i);
+						const currentLine = this.findLineNumber(xmlInput, node, i);
 						for (const childSpec of childrenRequired) {
 							const rawTag = childSpec.replace(/^<|>$/g, '');
 							let nsUri = null;
@@ -344,11 +401,12 @@ class SamlValidator {
 								results.push({
 									type: 'error',
 									message: `Missing child: ${childSpec} for ${check.label}`,
+									line: currentLine,
 									help: check.help
 								});
 							} else {
 								results.push({
-									type: 'success', message: `Present child: ${childSpec} for ${check.label}`
+									type: 'success', message: `Present child: ${childSpec} for ${check.label}`, line: currentLine
 								});
 							}
 						}
@@ -358,39 +416,56 @@ class SamlValidator {
 				const snapshot = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 				const count = snapshot.snapshotLength;
 				if (count === 0) {
-					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
+					results.push({type: 'error', message: `Missing: ${check.label}`, line: 1, help: check.help});
 				} else {
 					const regex = new RegExp(regexpMatch);
 					for (let i = 0; i < count; i++) {
 						const node = snapshot.snapshotItem(i);
+						const currentLine = this.findLineNumber(xmlInput, node, i);
 						const text = node.textContent || '';
 						if (regex.test(text)) {
-							results.push({type: 'success', message: `Present: ${check.label}`});
+							results.push({type: 'success', message: `Present: ${check.label}`, line: currentLine});
 						} else {
-							results.push({type: 'error', message: `Invalid format: ${check.label}`, help: check.help});
+							results.push({type: 'error', message: `Invalid format: ${check.label}`, line: currentLine, help: check.help});
 						}
 					}
 				}
 			} else if (maxOccurrences !== undefined) {
 				const snapshot = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 				const count = snapshot.snapshotLength;
-				if (count === 0) {
-					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
-				} else if (count > maxOccurrences) {
+				if (count > maxOccurrences) {
+					const currentLine = count > 0 ? this.findLineNumber(xmlInput, snapshot.snapshotItem(0), 0) : 1;
 					results.push({
 						type: 'error',
 						message: `Too many: ${check.label} (found ${count}, maximum allowed ${maxOccurrences})`,
+						line: currentLine,
 						help: check.help
 					});
+				} else if (count === 0) {
+					if (maxOccurrences === 0) {
+						results.push({type: 'success', message: `Not present: ${check.label}`, line: 1});
+					} else {
+						results.push({type: 'error', message: `Missing: ${check.label}`, line: 1, help: check.help});
+					}
 				} else {
-					results.push({type: 'success', message: `Present: ${check.label}`});
+					const currentLine = snapshot.snapshotLength > 0 ? this.findLineNumber(xmlInput, snapshot.snapshotItem(0), 0) : 1;
+					results.push({type: 'success', message: `Present: ${check.label}`, line: currentLine});
 				}
 			} else {
 				const result = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.BOOLEAN_TYPE, null);
 				if (result.booleanValue) {
-					results.push({type: 'success', message: `Present: ${check.label}`});
+					let line = 1;
+					if (!check.xpath.trim().toLowerCase().startsWith('boolean(')) {
+						try {
+							const snap = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+							if (snap.snapshotLength > 0) {
+								line = this.findLineNumber(xmlInput, snap.snapshotItem(0), 0);
+							}
+						} catch {}
+					}
+					results.push({type: 'success', message: `Present: ${check.label}`, line: line});
 				} else {
-					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
+					results.push({type: 'error', message: `Missing: ${check.label}`, line: 1, help: check.help});
 				}
 			}
 		});

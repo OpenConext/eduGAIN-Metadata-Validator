@@ -214,8 +214,8 @@ describe('SamlValidator', () => {
 			});
 
 			const results = await validator.validateAgainstXsd('<invalid/>');
-			expect(results.some(r => r.message.includes('XSD Error: Invalid element (Line 10)'))).toBe(true);
-			expect(results.some(r => r.message.includes('XSD Error: Another error (Line unknown)'))).toBe(true);
+			expect(results.some(r => r.message.includes('XSD Error: Invalid element') && r.line === 10)).toBe(true);
+			expect(results.some(r => r.message.includes('XSD Error: Another error') && r.line === 1)).toBe(true);
 		});
 
 		it('should handle schema fetch errors', async () => {
@@ -478,6 +478,16 @@ describe('SamlValidator', () => {
 					xpath: '//item',
 					'occurrence-max': 1,
 				},
+				{
+					label: 'Occur none true',
+					xpath: '//notexist',
+					'occurrence-max': 0,
+				},
+				{
+					label: 'Occur none false',
+					xpath: '//item',
+					'occurrence-max': 0,
+				}
 			];
 			const validator = new SamlValidator(config);
 			const parser = new window.DOMParser();
@@ -486,9 +496,11 @@ describe('SamlValidator', () => {
 				'text/xml'
 			);
 			const results = validator.runCustomChecks(xmlDoc);
-			expect(results.some(r => r.message.includes('Missing: Occur missing'))).toBe(true);
-			expect(results.some(r => r.message.includes('Present: Occur valid'))).toBe(true);
-			expect(results.some(r => r.message.includes('Too many: Occur too many (found 2, maximum allowed 1)'))).toBe(true);
+			expect(results[0].message).toContain('Missing: Occur missing');
+			expect(results[1].message).toContain('Present: Occur valid');
+			expect(results[2].message).toContain('Too many: Occur too many (found 2, maximum allowed 1)');
+			expect(results[3].message).toContain('Not present: Occur none true');
+			expect(results[4].message).toContain('Too many: Occur none false (found 2, maximum allowed 0)');
 		});
 
 		it('should evaluate boolean expression checks: true and false results', () => {
@@ -508,6 +520,58 @@ describe('SamlValidator', () => {
 			const results = validator.runCustomChecks(xmlDoc);
 			expect(results.some(r => r.message.includes('Present: Bool true'))).toBe(true);
 			expect(results.some(r => r.message.includes('Missing: Bool false'))).toBe(true);
+		});
+
+		it('should include correct line numbers in custom check results with multi-line xmlInput', () => {
+			const config = [
+				{
+					label: 'Root check',
+					xpath: '//root',
+				},
+				{
+					label: 'Item check',
+					xpath: '//item',
+				},
+				{
+					label: 'Missing check',
+					xpath: '//missing',
+				},
+				{
+					label: 'Child check',
+					xpath: '//item',
+					'children-required': ['subitem'],
+				},
+				{
+					label: 'Regexp check',
+					xpath: '//item',
+					'regexp-match': '^abc$',
+				},
+			];
+			const validator = new SamlValidator(config);
+			const parser = new window.DOMParser();
+			const xmlInput = `<!-- Line 1 -->
+<root>
+  <item>abc</item>
+  <item>xyz</item>
+</root>`;
+			const xmlDoc = parser.parseFromString(xmlInput, 'text/xml');
+			const results = validator.runCustomChecks(xmlDoc, xmlInput);
+
+			expect(results.some(r => r.message.includes('Present: Root check') && r.line === 2)).toBe(true);
+			expect(results.some(r => r.message.includes('Present: Item check') && r.line === 3)).toBe(true);
+			expect(results.some(r => r.message.includes('Missing: Missing check') && r.line === 1)).toBe(true);
+			expect(results.some(r => r.message.includes('Missing child: subitem for Child check') && r.line === 3)).toBe(true);
+			expect(results.some(r => r.message.includes('Present: Regexp check') && r.line === 3)).toBe(true);
+			expect(results.some(r => r.message.includes('Invalid format: Regexp check') && r.line === 4)).toBe(true);
+		});
+
+		it('should test findLineNumber helper robustness', () => {
+			const validator = new SamlValidator();
+			expect(validator.findLineNumber('', null)).toBe(1);
+			expect(validator.findLineNumber('<root/>', null)).toBe(1);
+			const parser = new window.DOMParser();
+			const xmlDoc = parser.parseFromString('<root><elem/></root>', 'text/xml');
+			expect(validator.findLineNumber('<root/>', xmlDoc.documentElement)).toBe(1);
 		});
 	});
 

@@ -29,7 +29,7 @@
 
 .results-entry {
 	display: grid;
-	grid-template-columns: 130px 1fr 1fr;
+	grid-template-columns: 6em 2em 1fr 1fr;
 	gap: 12px;
 	padding: 10px 12px;
 	border-bottom: 1px solid #edf2f7;

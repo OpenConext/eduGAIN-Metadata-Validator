@@ -178,11 +178,13 @@ function App() {
 			results.forEach(res => {
 				const resDiv = document.createElement('div');
 				const typeDiv = document.createElement('div');
+				const lineDiv = document.createElement('div');
 				const msgDiv = document.createElement('div');
 				const helpDiv = document.createElement('div');
 
 				resDiv.className = 'results-entry';
 				typeDiv.className = 'results-type';
+				lineDiv.className = 'results-lineno';
 				msgDiv.className = 'results-msg';
 				helpDiv.className = 'results-help';
 
@@ -200,10 +202,13 @@ function App() {
 
 				typeDiv.textContent = res.type;
 				msgDiv.textContent = res.message;
+				if (res.line) {
+					lineDiv.textContent = res.line;
+				}
 				if (res.help) {
 					helpDiv.textContent = res.help;
 				}
-				resDiv.append(typeDiv, msgDiv, helpDiv);
+				resDiv.append(typeDiv, lineDiv, msgDiv, helpDiv);
 				resultsContainer.appendChild(resDiv);
 			});
 		} else {

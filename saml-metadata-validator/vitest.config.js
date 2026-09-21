@@ -9,6 +9,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['validator.js'],
+      reporter: ['text', 'clover'],
       thresholds: {
         statements: 98,
         branches: 94,
