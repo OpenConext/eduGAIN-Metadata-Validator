@@ -186,6 +186,18 @@ function App() {
 				msgDiv.className = 'results-msg';
 				helpDiv.className = 'results-help';
 
+				switch (res.type) {
+					case "error":
+						resDiv.classList.add("result-error");
+						break;
+					case "success":
+						resDiv.classList.add("result-success");
+						break;
+					case "info":
+						resDiv.classList.add("result-info");
+						break;
+				}
+
 				typeDiv.textContent = res.type;
 				msgDiv.textContent = res.message;
 				if (res.help) {
