@@ -1,24 +1,54 @@
 [
     {
-        "xpath": "//md:EntityDescriptor",
+        "xpath": "/md:EntityDescriptor",
         "label": "EntityDescriptor (Root element)",
         "help": "The root element of a SAML metadata document must be EntityDescriptor."
     },
     {
-        "xpath": "//md:SPSSODescriptor",
+        "xpath": "/*/md:SPSSODescriptor",
         "label": "SPSSODescriptor",
         "help": "SPSSODescriptor is required for Service Provider metadata.",
         "occurence-max": 1
     },
     {
-        "xpath": "//md:AssertionConsumerService",
+        "xpath": "/*/md:SPSSODescriptor/md:AssertionConsumerService",
         "label": "AssertionConsumerService",
         "help": "AssertionConsumerService is where the IdP sends the SAML Response.",
         "occurence-max": 1
     },
     {
-        "xpath": "//mdui:UIInfo",
+        "xpath": "/*/md:SPSSODescriptor/md:Extensions/mdui:UIInfo",
         "label": "UIInfo (Discovery metadata)",
         "help": "UIInfo contains information for display in discovery services (e.g., Logo, DisplayName)."
+    },
+    {
+        "xpath": "/*/md:Organization",
+        "label": "Organization info",
+        "help": "Organization contains information about the organization delivering the service"
+    },
+    {
+        "xpath": "/*/md:Organization/md:OrganizationName[@xml:lang='en']",
+        "label": "Organization name",
+        "help": "Name of the organization in English"
+    },
+    {
+        "xpath": "/*/md:Organization/md:OrganizationDisplayName[@xml:lang='en']",
+        "label": "Organization info",
+        "help": "Displayname of the organization in English"
+    },
+    {
+        "xpath": "/*/md:Organization/md:OrganizationURL[@xml:lang='en']",
+        "label": "Organization info",
+        "help": "Home url of the organization in English"
+    },
+    {
+        "xpath": "/*/md:ContactPerson[@contactType='technical']",
+        "label": "Contact person (technical)",
+        "help": "Contact details for technical issues"
+    },
+    {
+        "xpath": "/*/md:ContactPerson[@contactType='support']",
+        "label": "Contact person (support)",
+        "help": "Contact details for user support"
     }
 ]
