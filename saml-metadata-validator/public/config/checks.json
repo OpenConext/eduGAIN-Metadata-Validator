@@ -7,12 +7,14 @@
     {
         "xpath": "//md:SPSSODescriptor",
         "label": "SPSSODescriptor",
-        "help": "SPSSODescriptor is required for Service Provider metadata."
+        "help": "SPSSODescriptor is required for Service Provider metadata.",
+        "occurence-max": 1
     },
     {
         "xpath": "//md:AssertionConsumerService",
         "label": "AssertionConsumerService",
-        "help": "AssertionConsumerService is where the IdP sends the SAML Response."
+        "help": "AssertionConsumerService is where the IdP sends the SAML Response.",
+        "occurence-max": 1
     },
     {
         "xpath": "//mdui:UIInfo",

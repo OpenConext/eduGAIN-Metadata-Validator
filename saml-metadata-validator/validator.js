@@ -315,11 +315,24 @@ export class SamlValidator {
 		};
 
 		this.config.forEach(check => {
-			const result = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.BOOLEAN_TYPE, null);
-			if (result.booleanValue) {
-				results.push({type: 'success', message: `Present: ${check.label}`});
+			const maxOccurrences = check['occurence-max'] !== undefined ? check['occurence-max'] : check['occurrence-max'];
+			if (maxOccurrences !== undefined) {
+				const snapshot = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+				const count = snapshot.snapshotLength;
+				if (count === 0) {
+					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
+				} else if (count > maxOccurrences) {
+					results.push({type: 'error', message: `Too many: ${check.label} (found ${count}, maximum allowed ${maxOccurrences})`, help: check.help});
+				} else {
+					results.push({type: 'success', message: `Present: ${check.label}`});
+				}
 			} else {
-				results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
+				const result = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.BOOLEAN_TYPE, null);
+				if (result.booleanValue) {
+					results.push({type: 'success', message: `Present: ${check.label}`});
+				} else {
+					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
+				}
 			}
 		});
 		return results;
