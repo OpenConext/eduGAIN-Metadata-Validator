@@ -164,25 +164,39 @@ function App() {
 
 	const renderResults = useCallback(() => {
 		const rootNode = document.getElementById('validator-root');
-		if (!rootNode) return;
+		if (!rootNode) {
+			console.log("renderResults(): #validator-root not found");
+			return;
+		}
 		const resultsContainer = rootNode.querySelector('#results-container');
-		if (!resultsContainer) return;
+		if (!resultsContainer) {
+			console.log("renderResults(): #results-container not found");
+			return;
+		}
 		resultsContainer.innerHTML = '';
 		if (results.length > 0) {
 			results.forEach(res => {
 				const resDiv = document.createElement('div');
+				const typeDiv = document.createElement('div');
 				const msgDiv = document.createElement('div');
-				msgDiv.textContent = `${res.type.toUpperCase()}: ${res.message}`;
-				resDiv.appendChild(msgDiv);
+				const helpDiv = document.createElement('div');
+
+				resDiv.className = 'results-entry';
+				typeDiv.className = 'results-type';
+				msgDiv.className = 'results-msg';
+				helpDiv.className = 'results-help';
+
+				typeDiv.textContent = res.type;
+				msgDiv.textContent = res.message;
 				if (res.help) {
-					const helpDiv = document.createElement('div');
 					helpDiv.textContent = res.help;
-					resDiv.appendChild(helpDiv);
 				}
+				resDiv.append(typeDiv, msgDiv, helpDiv);
 				resultsContainer.appendChild(resDiv);
 			});
 		} else {
 			const placeholder = document.createElement('div');
+			placeholder.className = 'results-placeholder';
 			placeholder.textContent = 'Results will appear here...';
 			resultsContainer.appendChild(placeholder);
 		}
