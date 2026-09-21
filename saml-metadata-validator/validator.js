@@ -42,6 +42,9 @@ export class SamlValidator {
 			const nsResults = this.validateNamespaces(xmlDoc);
 			results.push(...nsResults);
 
+			// Ensure required namespaces are present for remainder of tests (e.g. XPath evaluation)
+			this.ensureNamespaces(xmlDoc);
+
 			// 3. XSD validation
 			const xsdResults = await this.validateAgainstXsd(xmlInput);
 			results.push(...xsdResults);
@@ -103,6 +106,23 @@ export class SamlValidator {
 			}
 		}
 		return results;
+	}
+
+	ensureNamespaces(xmlDoc) {
+		const requiredNamespaces = {
+			'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
+			'mdui': 'urn:oasis:names:tc:SAML:metadata:ui',
+			'ds': 'http://www.w3.org/2000/09/xmldsig#'
+		};
+		const docElement = xmlDoc.documentElement;
+		if (!docElement) return;
+
+		for (const [prefix, expectedUri] of Object.entries(requiredNamespaces)) {
+			const attr = docElement.getAttributeNode(`xmlns:${prefix}`);
+			if (!attr) {
+				docElement.setAttribute(`xmlns:${prefix}`, expectedUri);
+			}
+		}
 	}
 
 	// 2) XSD validation using xmllint-wasm
