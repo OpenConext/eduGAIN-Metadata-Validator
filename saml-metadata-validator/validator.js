@@ -110,6 +110,7 @@ export class SamlValidator {
 
 	ensureNamespaces(xmlDoc) {
 		const requiredNamespaces = {
+			'xml': 'http://www.w3.org/XML/1998/namespace',
 			'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
 			'mdui': 'urn:oasis:names:tc:SAML:metadata:ui',
 			'ds': 'http://www.w3.org/2000/09/xmldsig#'
