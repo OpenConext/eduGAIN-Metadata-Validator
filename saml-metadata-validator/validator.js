@@ -38,15 +38,19 @@ export class SamlValidator {
 
 			const xmlDoc = syntax.xmlDoc;
 
-			// 2. XSD validation
+			// 2. Namespace validation
+			const nsResults = this.validateNamespaces(xmlDoc);
+			results.push(...nsResults);
+
+			// 3. XSD validation
 			const xsdResults = await this.validateAgainstXsd(xmlInput);
 			results.push(...xsdResults);
 
-			// 3. Signature verification
+			// 4. Signature verification
 			const sigResults = await this.verifyXmlSignature(xmlDoc);
 			results.push(...sigResults);
 
-			// 4. Custom checks
+			// 5. Custom checks
 			const customResults = this.runCustomChecks(xmlDoc);
 			results.push(...customResults);
 
@@ -71,6 +75,34 @@ export class SamlValidator {
 		out.results.push({type: 'success', message: 'XML Syntax is valid.'});
 		out.xmlDoc = xmlDoc;
 		return out;
+	}
+
+	// 2) Namespace validation
+	validateNamespaces(xmlDoc) {
+		const results = [];
+		const requiredNamespaces = {
+			'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
+			'mdui': 'urn:oasis:names:tc:SAML:metadata:ui',
+			'ds': 'http://www.w3.org/2000/09/xmldsig#'
+		};
+
+		const docElement = xmlDoc.documentElement;
+		if (!docElement) {
+			results.push({type: 'error', message: 'Document root element missing.'});
+			return results;
+		}
+
+		for (const [prefix, expectedUri] of Object.entries(requiredNamespaces)) {
+			const attr = docElement.getAttributeNode(`xmlns:${prefix}`);
+			if (!attr) {
+				results.push({type: 'error', message: `Missing required namespace: xmlns:${prefix}="${expectedUri}"`});
+			} else if (attr.value !== expectedUri) {
+				results.push({type: 'error', message: `Incorrect namespace URI for xmlns:${prefix}: expected "${expectedUri}", got "${attr.value}"`});
+			} else {
+				results.push({type: 'success', message: `Namespace defined: xmlns:${prefix}="${expectedUri}"`});
+			}
+		}
+		return results;
 	}
 
 	// 2) XSD validation using xmllint-wasm
