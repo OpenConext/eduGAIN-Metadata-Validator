@@ -316,7 +316,53 @@ export class SamlValidator {
 
 		this.config.forEach(check => {
 			const maxOccurrences = check['occurence-max'] !== undefined ? check['occurence-max'] : check['occurrence-max'];
-			if (maxOccurrences !== undefined) {
+			const childrenRequired = check['children-required'];
+			const regexpMatch = check['regexp-match'];
+
+			if (childrenRequired !== undefined) {
+				const snapshot = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+				const count = snapshot.snapshotLength;
+				if (count === 0) {
+					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
+				} else {
+					for (let i = 0; i < count; i++) {
+						const node = snapshot.snapshotItem(i);
+						for (const childSpec of childrenRequired) {
+							const rawTag = childSpec.replace(/^<|>$/g, '');
+							let nsUri = null;
+							let localName = rawTag;
+							if (rawTag.includes(':')) {
+								const parts = rawTag.split(':');
+								nsUri = nsResolver(parts[0]);
+								localName = parts[1];
+							}
+							const found = nsUri ? node.getElementsByTagNameNS(nsUri, localName) : node.getElementsByTagName(localName);
+							if (found.length === 0) {
+								results.push({type: 'error', message: `Missing child: ${childSpec} for ${check.label}`, help: check.help});
+							} else {
+								results.push({type: 'success', message: `Present child: ${childSpec} for ${check.label}`});
+							}
+						}
+					}
+				}
+			} else if (regexpMatch !== undefined) {
+				const snapshot = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+				const count = snapshot.snapshotLength;
+				if (count === 0) {
+					results.push({type: 'error', message: `Missing: ${check.label}`, help: check.help});
+				} else {
+					const regex = new RegExp(regexpMatch);
+					for (let i = 0; i < count; i++) {
+						const node = snapshot.snapshotItem(i);
+						const text = node.textContent || '';
+						if (regex.test(text)) {
+							results.push({type: 'success', message: `Present: ${check.label}`});
+						} else {
+							results.push({type: 'error', message: `Invalid format: ${check.label}`, help: check.help});
+						}
+					}
+				}
+			} else if (maxOccurrences !== undefined) {
 				const snapshot = xmlDoc.evaluate(check.xpath, xmlDoc, nsResolver, window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 				const count = snapshot.snapshotLength;
 				if (count === 0) {

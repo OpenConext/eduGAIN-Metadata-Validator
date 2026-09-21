@@ -50,5 +50,17 @@
         "xpath": "/*/md:ContactPerson[@contactType='support']",
         "label": "Contact person (support)",
         "help": "Contact details for user support"
+    },
+    {
+        "xpath": "/*/md:ContactPerson",
+        "label": "Contact person (support)",
+        "help": "Contact details for user support",
+        "children-required": ["<md:SurName>", "<md:EmailAddress>"]
+    },
+    {
+        "xpath": "/*/md:ContactPerson/md:EmailAddress",
+        "label": "Contact person has valid email address",
+        "help": "Contaxt email addresses must be valid mailto: uri",
+        "regexp-match": "^mailto:(?!\\.)(?!.*\\.\\.)([a-z0-9_'+\\-\\.]*)[a-z0-9_+\\-]@([a-z0-9][a-z0-9\\-]*\\.)+[a-z]{2,}$"
     }
 ]
