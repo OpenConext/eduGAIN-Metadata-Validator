@@ -66,23 +66,7 @@
 	</div>
 </template>
 
-<!-- Vite dev server will handle module loading during development.
-     In production builds, the generated dist/index.html will include the hashed bundle automatically. -->
-<script type="module">
-	try {
-		// In development with Vite, import the source entry explicitly.
-		// In the production build (dist), this script block is ignored because dist/index.html
-		// already references the compiled asset (./assets/index-*.js).
-		if (import.meta && import.meta.env && import.meta.env.DEV) {
-			await import('./App.js');
-		}
-	} catch (e) {
-		const el = document.getElementById('app-load-error');
-		if (el) el.style.display = 'block';
-		// Also surface the error to console
-		console.error('Failed to load application entry:', e);
-	}
-</script>
+<script type="module" src="./App.js"></script>
 <script>
 	// Fallback: if module fails to load or execute, show error after timeout
 	setTimeout(() => {
