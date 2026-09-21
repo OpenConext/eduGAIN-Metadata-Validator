@@ -90,7 +90,6 @@ class SamlValidator {
 		const requiredNamespaces = {
 			'md': 'urn:oasis:names:tc:SAML:2.0:metadata',
 			'mdui': 'urn:oasis:names:tc:SAML:metadata:ui',
-			'ds': 'http://www.w3.org/2000/09/xmldsig#'
 		};
 
 		const docElement = xmlDoc.documentElement;
@@ -230,7 +229,11 @@ class SamlValidator {
 			const dsNs = 'http://www.w3.org/2000/09/xmldsig#';
 			const signatureEl = xmlDoc.getElementsByTagNameNS(dsNs, 'Signature')[0];
 			if (!signatureEl) {
-				results.push({type: 'info', message: 'XML Signature: No ds:Signature element found.'});
+				results.push({
+					type: 'warning',
+					message: 'XML Signature: No ds:Signature element found.',
+					help: "For general eduGAIN-compatiblilty, supporting encryption of assertions is advised"
+				});
 				return results;
 			}
 

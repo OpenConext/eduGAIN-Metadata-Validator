@@ -2,7 +2,14 @@
     {
         "xpath": "/md:EntityDescriptor",
         "label": "EntityDescriptor (Root element)",
-        "help": "The root element of a SAML metadata document must be EntityDescriptor."
+        "help": "The root element of a SAML metadata document must be EntityDescriptor.",
+        "occurence-max": 1
+    },
+    {
+        "xpath": "/*/md:Extensions/mdrpi:RegistrationInfo",
+        "label": "RegistrationInfo",
+        "help": "RegistrationInfo must not be set; it will be added by SURFconext",
+        "occurence-max": 0
     },
     {
         "xpath": "/*/md:SPSSODescriptor",
@@ -19,48 +26,51 @@
     {
         "xpath": "/*/md:SPSSODescriptor/md:Extensions/mdui:UIInfo",
         "label": "UIInfo (Discovery metadata)",
-        "help": "UIInfo contains information for display in discovery services (e.g., Logo, DisplayName)."
+        "help": "A <md:UIInfo> element is required.  It contains information for display in discovery services (e.g., Logo, DisplayName)."
     },
     {
         "xpath": "/*/md:Organization",
         "label": "Organization info",
-        "help": "Organization contains information about the organization delivering the service"
+        "help": "A <md:Organization> element with information about the origanization whick provides the service."
     },
     {
         "xpath": "/*/md:Organization/md:OrganizationName[@xml:lang='en']",
-        "label": "Organization name",
-        "help": "Name of the organization in English"
+        "label": "OrganizationName",
+        "help": "The Organization element needs to contain the element <md:OrganizationName xml:lang=\"en\">.  Other languages are optional."
     },
     {
         "xpath": "/*/md:Organization/md:OrganizationDisplayName[@xml:lang='en']",
-        "label": "Organization info",
-        "help": "Displayname of the organization in English"
+        "label": "OrganizationDisplayName",
+        "help": "The Organization element needs to contain the element <md:OrganizationDisplayName xml:lang=\"en\">. Other languages are optional."
     },
     {
         "xpath": "/*/md:Organization/md:OrganizationURL[@xml:lang='en']",
-        "label": "Organization info",
-        "help": "Home url of the organization in English"
+        "label": "OrganizationURL",
+        "help": "The Organization element needs to contain the element <md:OrganizationURL xml:lang=\"en\">. Other languages are optional."
     },
     {
         "xpath": "/*/md:ContactPerson[@contactType='technical']",
-        "label": "Contact person (technical)",
-        "help": "Contact details for technical issues"
+        "label": "ContactPerson (technical)",
+        "help": "At least one Contact with contactType 'technical' is required"
     },
     {
         "xpath": "/*/md:ContactPerson[@contactType='support']",
-        "label": "Contact person (support)",
-        "help": "Contact details for user support"
+        "label": "ContactPerson (support)",
+        "help": "At least one Contact with contactType 'support' is required"
     },
     {
         "xpath": "/*/md:ContactPerson",
-        "label": "Contact person (support)",
-        "help": "Contact details for user support",
-        "children-required": ["<md:SurName>", "<md:EmailAddress>"]
+        "label": "ContactPerson surname and email address",
+        "help": "<md:SurName> and an <md:EMailAddress> elements are required for each ContactPerson",
+        "children-required": [
+            "<md:SurName>",
+            "<md:EmailAddress>"
+        ]
     },
     {
         "xpath": "/*/md:ContactPerson/md:EmailAddress",
-        "label": "Contact person has valid email address",
-        "help": "Contaxt email addresses must be valid mailto: uri",
+        "label": "Contact person email address",
+        "help": "Contact email addresses must be a valid mailto: uri.",
         "regexp-match": "^mailto:(?!\\.)(?!.*\\.\\.)([a-z0-9_'+\\-\\.]*)[a-z0-9_+\\-]@([a-z0-9][a-z0-9\\-]*\\.)+[a-z]{2,}$"
     }
 ]

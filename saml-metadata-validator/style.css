@@ -73,6 +73,11 @@
 	border-left: 4px solid #e53e3e;
 }
 
+.results-entry.result-warning {
+	background-color:  #fffae6;
+	border-left: 4px solid #ffcc00;
+}
+
 .results-entry.result-info {
 	background-color: #ebf8ff;
 	border-left: 4px solid #3182ce;

@@ -192,6 +192,9 @@ function App() {
 					case "error":
 						resDiv.classList.add("result-error");
 						break;
+					case "warning":
+						resDiv.classList.add("result-warning");
+						break;
 					case "success":
 						resDiv.classList.add("result-success");
 						break;
