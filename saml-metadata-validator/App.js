@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import {createRoot} from 'react-dom/client';
-import {SamlValidator} from './validator.js';
+import SamlValidator from './validator.js';
 // CodeMirror 6: use static ESM imports so Vite dedupes a single instance
 import {EditorView, lineNumbers, drawSelection, highlightActiveLine, keymap} from '@codemirror/view';
 import {EditorState} from '@codemirror/state';

@@ -12,7 +12,7 @@ const SCHEMAS = {
 	"sstc-saml-metadata-ui-v1.0.xsd": "sstc-saml-metadata-ui-v1.0.xsd",
 };
 
-export class SamlValidator {
+class SamlValidator {
 	constructor(config = []) {
 		this.config = Array.isArray(config) ? config : [];
 	}
@@ -98,11 +98,17 @@ export class SamlValidator {
 		for (const [prefix, expectedUri] of Object.entries(requiredNamespaces)) {
 			const attr = docElement.getAttributeNode(`xmlns:${prefix}`);
 			if (!attr) {
-				results.push({type: 'error', message: `Missing required namespace: xmlns:${prefix}="${expectedUri}"`});
+				results.push({
+					type: 'error',
+					message: `Missing required namespace: xmlns:${prefix}="${expectedUri}"`});
 			} else if (attr.value !== expectedUri) {
-				results.push({type: 'error', message: `Incorrect namespace URI for xmlns:${prefix}: expected "${expectedUri}", got "${attr.value}"`});
+				results.push({
+					type: 'error',
+					message: `Incorrect namespace URI for xmlns:${prefix}: expected "${expectedUri}", got "${attr.value}"`});
 			} else {
-				results.push({type: 'success', message: `Namespace defined: xmlns:${prefix}="${expectedUri}"`});
+				results.push({
+					type: 'success',
+					message: `Namespace defined: xmlns:${prefix}="${expectedUri}"`});
 			}
 		}
 		return results;
@@ -384,3 +390,5 @@ export class SamlValidator {
 		return results;
 	}
 }
+
+export default SamlValidator;
